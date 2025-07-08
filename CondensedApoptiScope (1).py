@@ -17,9 +17,6 @@ import re
 import tempfile
 import traceback
 from PIL import Image
-import tensorflow as tf
-from tensorflow.keras.applications import EfficientNetB0
-from tensorflow.keras.applications.efficientnet import preprocess_input
 from tqdm.notebook import tqdm
 from tqdm import tqdm
 from skimage import filters, morphology, measure
