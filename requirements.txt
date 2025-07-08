@@ -6,5 +6,4 @@ matplotlib
 tifffile
 scikit-image
 scikit-learn
-tensorflow
 Pillow
