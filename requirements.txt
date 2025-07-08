@@ -8,3 +8,4 @@ scikit-image
 scikit-learn
 Pillow
 tqdm
+seaborn
