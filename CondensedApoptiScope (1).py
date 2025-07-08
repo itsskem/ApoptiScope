@@ -17,7 +17,6 @@ import re
 import tempfile
 import traceback
 from PIL import Image
-from tqdm.notebook import tqdm
 from tqdm import tqdm
 from skimage import filters, morphology, measure
 from skimage import io, color, filters, morphology, exposure
