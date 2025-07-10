@@ -16,6 +16,8 @@ import matplotlib.pyplot as plt
 import re
 import tempfile
 import traceback
+import io
+import zipfile
 from PIL import Image
 from tqdm import tqdm
 from skimage import filters, morphology, measure
@@ -609,17 +611,24 @@ def streamlit_main():
                 st.balloons()
                 st.success("🎉 ApoptiScope pipeline complete!")
                  
+                raw_csv = df.to_csv(index=False)
+                new_csv = analyzed_df.to_csv(index=False)
+
+                # Create a zip in memory
+                zip_buffer = io.BytesIO()
+                with zipfile.ZipFile(zip_buffer, "a", zipfile.ZIP_DEFLATED) as zf:
+                   zf.writestr(user_filename, raw_csv)
+                   zf.writestr(f"NEW_{user_filename}", new_csv)
+               
+               # Go to start of buffer
+                zip_buffer.seek(0)
+               
+               # Single download button for zip
                 st.download_button(
-                label="📥 Download results",
-                data=df.to_csv(index=False).encode('utf-8'),
-                file_name=user_filename,
-                mime='text/csv',
-                )
-                st.download_button(
-                label="📥 Download ANALYZED results CSV",
-                data=analyzed_df.to_csv(index=False).encode('utf-8'),
-                file_name=f"NEW_{user_filename}",
-                mime='text/csv',
+                   label="📥 Download Both Results (ZIP)",
+                   data=zip_buffer,
+                   file_name="results_bundle.zip",
+                   mime="application/zip"
                 )
 
             except Exception as e:
