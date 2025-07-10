@@ -101,32 +101,32 @@ def is_purple_present(img, lower_hsv=(125, 50, 50), upper_hsv=(155, 255, 255), t
 def find_apoptosis(all_files):
     apoptosis_slice_ids = set() 
 
-
     for file in tqdm(all_files):
         try: 
-            filename = os.path.basename(file).lower()
+            filename = file["name"].lower()
             if detect_channel(filename) != 'c4':
                 continue
-    
+
             slice_match = re.search(r"s\d{2}", filename)
             if not slice_match:
                 print(f"⚠️ No slice ID in {filename}. Skipping.")
                 continue
             slice_id = slice_match.group(0)
-    
+
             # Load and check for purple
-            img = cv2.imread(file)
+            file_bytes = np.frombuffer(file["bytes"], np.uint8)
+            img = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
             if img is None:
-                print(f"❌ Could not read image: {file}")
+                print(f"❌ Could not read image: {filename}")
                 continue
-    
+
             new_img = enhance_contrast(img)
-            
+
             if is_purple_present(new_img):
                 apoptosis_slice_ids.add(slice_id) 
-        
+
         except Exception as e:
-            print(f"❌ Error segmenting {file}: {e}")
+            print(f"❌ Error segmenting {filename}: {e}")
 
     return apoptosis_slice_ids
 
@@ -139,21 +139,19 @@ def get_matching_images(all_files, apoptosis_slice_ids):
     DAPI_channels = []
     apoptosis_channels = []
     multi_channels = []
-    
+
     for file in tqdm(all_files, desc="Collecting matching images"):
         try:
-            filename = os.path.basename(file).lower()
-    
-            # Extract slice ID
+            filename = file["name"].lower()
+
             slice_match = re.search(r"s\d{2}", filename)
             if not slice_match:
                 continue
             slice_id = slice_match.group(0)
-    
-            # Keep only slices we found positive
+
             if slice_id not in apoptosis_slice_ids:
                 continue
-    
+
             channel = detect_channel(filename)
             if channel == 'c1':
                 DAPI_channels.append(file)
@@ -161,13 +159,11 @@ def get_matching_images(all_files, apoptosis_slice_ids):
                 apoptosis_channels.append(file)
             elif channel == 'multichannel':
                 multi_channels.append(file)
-    
+
         except Exception as e:
-            print(f"❌ Error collecting {file}: {e}")
+            print(f"❌ Error collecting {filename}: {e}")
 
     return DAPI_channels, apoptosis_channels, multi_channels
-
-
 
 # In[ ]:
 
@@ -204,14 +200,16 @@ def preprocess_image(img, clahe_clip=3.0, blur_kernel=(5, 5), denoise_h=10):
 # In[ ]:
 
 
-def load_image_original(filepath): #reads in the image
-   return tifffile.imread(filepath)
+def load_image_original(file):
+    file_bytes = np.frombuffer(file["bytes"], np.uint8)
+    img = cv2.imdecode(file_bytes, cv2.IMREAD_UNCHANGED)
+    return img
 
 #need to segment the images
 
 def segment_cells(img_path, min_size=100):
     # Load
-    img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
+#    img = cv2.imdecode(file_bytes, cv2.IMREAD_GRAYSCALE)
     
     # Preprocess
     preprocessed = preprocess_grayscale_image(img)
@@ -252,7 +250,7 @@ def segment_apoptosis(apoptosis_channels):
     segmented_masks = {}
     for file in tqdm(apoptosis_channels):
         try:
-            filename = os.path.basename(file).lower()
+            filename = file["name"].lower()
     
             original_img = load_image_original(file)
             if original_img is None:
@@ -312,7 +310,7 @@ def segment_dapi(DAPI_channels):
     dapi_masks = {}
     for file in tqdm(DAPI_channels):
         try:
-            filename = os.path.basename(file).lower()
+            filename = file["name"].lower()
     
             img = load_image_original(file)
             if img is None:
@@ -397,8 +395,8 @@ def quantify_apoptosis(segmented_masks, dapi_masks, apoptosis_channels, multi_ch
             # 1️⃣ Find matching apoptosis channel image
             try:
                 apoptosis_path = next(
-                    path for path in apoptosis_channels if extract_sample_id(path) == sid
-                )
+                   path for path in apoptosis_channels if extract_sample_id(path["name"]) == sid
+               )
             except StopIteration:
                 print(f"⚠️ No apoptosis channel image found for {sid}")
                 continue
@@ -441,8 +439,8 @@ def quantify_apoptosis(segmented_masks, dapi_masks, apoptosis_channels, multi_ch
             try:
                 # 1️⃣ Find the matching multichannel image path
                 multi_path = next(
-                    path for path in multi_channels if extract_sample_id(path) == sid
-                )
+                   path for path in multi_channels if extract_sample_id(path["name"]) == sid
+               )
     
                 apopti_path = next(
                     path for path in apoptosis_channels if extract_sample_id(path) == sid
@@ -450,11 +448,6 @@ def quantify_apoptosis(segmented_masks, dapi_masks, apoptosis_channels, multi_ch
                 )
     
                 # 2️⃣ Load it
-                multi_img = load_image_original(multi_path)
-                if multi_img is None:
-                    print(f"⚠️ Could not load multichannel image for {sid}")
-                    continue
-    
                 multi_img = load_image_original(multi_path)
                 if multi_img is None:
                     print(f"⚠️ Could not load multichannel image for {sid}")
@@ -555,75 +548,93 @@ def analyzing_results(filtered_df, user_filename, control_ids=None):
 # In[ ]:
 
 
-def show_treated_images(filtered_df, baseline_mean, control_ids, data_folder):
+def show_treated_images(filtered_df, baseline_mean, control_ids, uploaded_files):
     """
     Filters for samples with percent increase different from baseline_mean,
-    excludes control IDs, then loads and displays the treated sample images.
+    excludes control IDs, then loads and displays the treated sample images
+    from the uploaded_files list.
     """
 
-    # 1️⃣ Create change_df
+    # 1️⃣ Filter for treated images
     change_df = filtered_df[
-        filtered_df["percent_increase_vs_control"] != baseline_mean
+        (filtered_df["percent_increase_vs_control"] != baseline_mean) &
+        (~filtered_df["sample_id"].isin(control_ids))
     ].copy()
 
-    print(f"✅ Found {len(change_df)} rows with percent increase != baseline.")
+    st.info(f"✅ Found {len(change_df)} treated images to display.")
 
-    # 2️⃣ Filter out control IDs to get treated sample image files
-    treated_images = change_df[
-        ~change_df["sample_id"].isin(control_ids)
-    ]["file"].tolist()
+    if change_df.empty:
+        st.warning("⚠️ No treated images found to display.")
+        return change_df, []
 
-    print(f"✅ Found {len(treated_images)} treated images to display.")
+    # 2️⃣ Make a map of uploaded filenames -> files
+    uploaded_map = {file["name"].lower(): file for file in uploaded_files}
 
-    # 3️⃣ Loop and show each image
-    for file in tqdm(treated_images, desc="Displaying images"):
+
+    treated_images_list = []
+
+    # 3️⃣ Loop through treated images in DataFrame
+    for filename in change_df["file"]:
         try:
-            filename = os.path.basename(file).lower()
-            filepath = os.path.join(data_folder, file)
-
-            img = load_image_original(filepath)
-            if img is None:
-                print(f"❌ Could not load image: {filepath}")
+            # Match uploaded file
+            file_key = filename.lower()
+            if file_key not in uploaded_map:
+                st.warning(f"⚠️ Uploaded file not found: {filename}")
                 continue
 
-            plt.figure(figsize=(6, 6))
-            plt.imshow(img, cmap='gray')
-            plt.title(filename)
-            plt.axis('off')
-            plt.show()
+            uploaded_file = uploaded_map[file_key]
+
+            # Load image from uploaded file
+            file_bytes = uploaded_file.read()
+            img = tifffile.imread(file_bytes)
+            if img is None:
+                st.warning(f"⚠️ Could not load image data for {filename}")
+                continue
+
+            # ✅ Display
+            st.subheader(f"🖼️ {filename}")
+            st.image(img, caption=filename, use_column_width=True)
+
+            treated_images_list.append(filename)
 
         except Exception as e:
-            print(f"❌ Error loading {file}: {e}")
+            st.error(f"❌ Error loading {filename}: {e}")
 
-    # 4️⃣ Optionally return change_df and treated_images list if needed
-    return change_df, treated_images
+    return change_df, treated_images_list
 
 
 # In[ ]:
 def streamlit_main():
     st.title("🧪 ApoptiScope: Interactive Analysis App")
     st.markdown("""
-    Upload your microscopy dataset folder path below. 
+    Upload your microscopy .tif/.tiff images below. 
     Follow the steps to run preprocessing, segmentation, and quantification.
     """)
 
-    # 1️⃣ User input for data folder
-    data_folder = st.text_input("📂 Enter the path to your dataset folder with images:")
+    uploaded_files = st.file_uploader(
+        "📂 Upload your .tif or .tiff images", 
+        accept_multiple_files=True, 
+        type=['tif', 'tiff']
+    )
 
-    if data_folder and not os.path.isdir(data_folder):
-        st.error(f"❌ Folder '{data_folder}' does not exist on server.")
-        st.stop()
-
-    # 2️⃣ User input for CSV output
     user_filename = st.text_input("💾 Name of CSV file to save results (e.g. results.csv):", "results.csv")
 
-    if data_folder and user_filename:
+    if uploaded_files and user_filename:
         if st.button("🚀 Run ApoptiScope Analysis"):
             try:
-                st.info("✅ Starting ApoptiScope analysis!")
-                all_files = get_all_files(data_folder)
-                st.success(f"✅ Found {len(all_files)} image files.")
+                st.info("✅ Preparing images...")
+                
+                # Load uploaded files into memory
+                all_files = []
+                for f in uploaded_files:
+                    all_files.append({
+                        "name": f.name,
+                        "bytes": f.read()
+                    })
 
+                st.success(f"✅ Loaded {len(all_files)} image files.")
+
+                # Run pipeline
                 apoptosis_slice_ids = find_apoptosis(all_files)
                 st.success(f"✅ Identified {len(apoptosis_slice_ids)} slices with apoptosis signal.")
 
@@ -666,14 +677,13 @@ def streamlit_main():
                 st.success(f"✅ Analysis complete. NEW_{user_filename} saved with fold-change results.")
 
                 if st.checkbox("👁️ Show treated images"):
-                    show_treated_images(analyzed_df, analyzed_df['percent_increase_vs_control'].mean(), control_ids, data_folder)
+                    show_treated_images(analyzed_df, analyzed_df['percent_increase_vs_control'].mean(), control_ids, all_files)
 
                 st.balloons()
                 st.success("🎉 ApoptiScope pipeline complete!")
 
             except Exception as e:
                 st.error(f"❌ ERROR: {e}")
-
 
 # In[ ]:
 
