@@ -390,9 +390,8 @@ def quantify_apoptosis(segmented_masks, dapi_masks, apoptosis_channels, multi_ch
                )
     
                 apopti_path = next(
-                    path for path in apoptosis_channels if extract_sample_id(path) == sid
-    
-                )
+                   path for path in apoptosis_channels if extract_sample_id(path["name"]) == sid
+               )
     
                 # 2️⃣ Load it
                 multi_img = load_image_original(multi_path)
