@@ -608,6 +608,12 @@ def streamlit_main():
 
                 st.balloons()
                 st.success("🎉 ApoptiScope pipeline complete!")
+                st.download_button(
+                label="📥 Download results",
+                data=df.to_csv(index=False).encode('utf-8'),
+                file_name=user_filename,
+                mime='text/csv',
+                )
 
             except Exception as e:
                 st.error(f"❌ ERROR: {e}")
