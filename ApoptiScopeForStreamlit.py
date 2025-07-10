@@ -51,7 +51,6 @@ def get_all_files(data_folder):
         if f.endswith(('.tif', '.tiff'))
         ]
     
-print("Apoptiscope now has access to the images!")
 
 
 # In[ ]:
