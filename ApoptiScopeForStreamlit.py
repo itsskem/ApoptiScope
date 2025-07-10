@@ -44,9 +44,6 @@ from collections import defaultdict
 
 # In[ ]:
 
-
-data_folder = input("What is the name of the dataset folder containing the spheroid assay images?")
-
 def get_all_files(data_folder):
      return [
         os.path.join(data_folder, f)
