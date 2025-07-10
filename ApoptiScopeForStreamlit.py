@@ -608,7 +608,7 @@ def show_treated_images(filtered_df, baseline_mean, control_ids, data_folder):
 
 # In[ ]:
 
-
+'''
 def main():
        
         # 1️⃣ User input
@@ -672,14 +672,90 @@ def main():
     
         print("\n✅ ApoptiScope pipeline complete!\n")
 
+'''
+
+def streamlit_main():
+    st.title("🧪 ApoptiScope: Interactive Analysis App")
+    st.markdown("""
+    Upload your microscopy dataset folder path below. 
+    Follow the steps to run preprocessing, segmentation, and quantification.
+    """)
+
+    # 1️⃣ User input for data folder
+    data_folder = st.text_input("📂 Enter the path to your dataset folder with images:")
+
+    if data_folder and not os.path.isdir(data_folder):
+        st.error(f"❌ Folder '{data_folder}' does not exist on server.")
+        st.stop()
+
+    # 2️⃣ User input for CSV output
+    user_filename = st.text_input("💾 Name of CSV file to save results (e.g. results.csv):", "results.csv")
+
+    if data_folder and user_filename:
+        if st.button("🚀 Run ApoptiScope Analysis"):
+            try:
+                st.info("✅ Starting ApoptiScope analysis!")
+                all_files = get_all_files(data_folder)
+                st.success(f"✅ Found {len(all_files)} image files.")
+
+                apoptosis_slice_ids = find_apoptosis(all_files)
+                st.success(f"✅ Identified {len(apoptosis_slice_ids)} slices with apoptosis signal.")
+
+                if not apoptosis_slice_ids:
+                    st.warning("⚠️ No slices detected with apoptosis signal. Exiting.")
+                    st.stop()
+
+                DAPI_channels, apoptosis_channels, multi_channels = get_matching_images(all_files, apoptosis_slice_ids)
+                st.success(f"✅ Channels collected:\n- DAPI: {len(DAPI_channels)}\n- Apoptosis: {len(apoptosis_channels)}\n- Multichannel: {len(multi_channels)}")
+
+                if not DAPI_channels or not apoptosis_channels:
+                    st.warning("⚠️ Missing necessary channels for segmentation. Exiting.")
+                    st.stop()
+
+                segmented_masks = segment_apoptosis(apoptosis_channels)
+                dapi_masks = segment_dapi(DAPI_channels)
+
+                if not segmented_masks or not dapi_masks:
+                    st.warning("⚠️ Segmentation failed for one or more channels. Exiting.")
+                    st.stop()
+
+                results = quantify_apoptosis(segmented_masks, dapi_masks, apoptosis_channels, multi_channels)
+                if not results:
+                    st.warning("⚠️ No quantification results generated. Exiting.")
+                    st.stop()
+
+                save_results(results, user_filename)
+                st.success(f"✅ Raw results saved to {user_filename}")
+
+                df = pd.read_csv(user_filename)
+                filtered_df = df[df["apoptosis_area"] >= 20000]
+
+                if filtered_df.empty:
+                    st.warning("⚠️ No rows passed apoptosis_area >= 20000 filter. Exiting.")
+                    st.stop()
+
+                control_ids = ['s01', 's02', 's03', 's04', 's05']
+                analyzed_df = analyzing_results(filtered_df, user_filename, control_ids)
+
+                st.success(f"✅ Analysis complete. NEW_{user_filename} saved with fold-change results.")
+
+                if st.checkbox("👁️ Show treated images"):
+                    show_treated_images(analyzed_df, analyzed_df['percent_increase_vs_control'].mean(), control_ids, data_folder)
+
+                st.balloons()
+                st.success("🎉 ApoptiScope pipeline complete!")
+
+            except Exception as e:
+                st.error(f"❌ ERROR: {e}")
+
 
 # In[ ]:
 
-
-main()
+# This call replaces "if __name__ == '__main__': main()"
+streamlit_main()
 
 # In[ ]:
-
+ 
 
 
 
