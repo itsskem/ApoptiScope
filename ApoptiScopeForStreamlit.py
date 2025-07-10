@@ -3,9 +3,6 @@
 
 # In[ ]:
 
-import streamlit as st
-st.title("ApoptiScope")
-
 
 import sys
 import os
