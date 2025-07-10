@@ -21,7 +21,7 @@ import zipfile
 from PIL import Image
 from tqdm import tqdm
 from skimage import filters, morphology, measure
-from skimage import io, color, filters, morphology, exposure
+from skimage import color, filters, morphology, exposure
 from skimage.segmentation import clear_border
 from skimage.measure import label
 from skimage.morphology import remove_small_objects
