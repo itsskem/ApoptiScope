@@ -345,6 +345,9 @@ def quantify_apoptosis(segmented_masks, dapi_masks, apoptosis_channels, multi_ch
                 continue
     
             # ✅ Combine them
+            if apoptosis_labeled.shape != dapi_mask.shape:
+            print(f"⚠️ Shape mismatch for sample {sid}: apoptosis={apoptosis_labeled.shape}, dapi={dapi_mask.shape}")
+            continue
             combined_mask = apoptosis_labeled * (dapi_mask > 0)
     
             # 1️⃣ Find matching apoptosis channel image
