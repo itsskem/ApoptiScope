@@ -271,31 +271,7 @@ def segment_apoptosis(apoptosis_channels):
             
             # Store result
             segmented_masks[filename] = labeled_mask
-    
-            # Plotting
-            plt.figure(figsize=(12, 4))
-    
-            # Original grayscale
-            plt.subplot(1, 3, 1)
-            plt.imshow(original_img, cmap='gray')
-            plt.title('Original' + filename)
-            plt.axis('off')
-            
-            # Binary mask
-            plt.subplot(1, 3, 2)
-            plt.imshow(binary_mask, cmap='gray')
-            plt.title('Binary Mask')
-            plt.axis('off')
-            
-            # Labeled regions
-            plt.subplot(1, 3, 3)
-            plt.imshow(labeled_mask, cmap='nipy_spectral')
-            plt.title('Labeled Segmentation')
-            plt.axis('off')
-            
-            plt.tight_layout()
-            plt.show()
-    
+
         except Exception as e:
             print(f"❌ Error segmenting {file}: {e}")
 
@@ -327,29 +303,6 @@ def segment_dapi(DAPI_channels):
     
             # Store
             dapi_masks[filename] = labeled_dapi_mask
-    
-            plt.figure(figsize=(12, 4))
-    
-            # Original grayscale
-            plt.subplot(1, 3, 1)
-            plt.imshow(img, cmap='gray')
-            plt.title('Original')
-            plt.axis('off')
-            
-            # Binary mask
-            plt.subplot(1, 3, 2)
-            plt.imshow(dapi_mask, cmap='gray')
-            plt.title('DAPI Mask')
-            plt.axis('off')
-            
-            # Labeled regions
-            plt.subplot(1, 3, 3)
-            plt.imshow(labeled_dapi_mask, cmap='nipy_spectral')
-            plt.title('Labeled DAPI Segmentation')
-            plt.axis('off')
-            
-            plt.tight_layout()
-            plt.show()
     
     
         except Exception as e:
@@ -429,12 +382,6 @@ def quantify_apoptosis(segmented_masks, dapi_masks, apoptosis_channels, multi_ch
             # --- Quantification Block END ---
             
     
-            # ✅ Plot or store
-            plt.figure(figsize=(8, 8))
-            plt.imshow(combined_mask, cmap='nipy_spectral')
-            plt.title(f'Apoptosis in DAPI regions: {sid}')
-            plt.axis('off')
-            plt.show()
     
             try:
                 # 1️⃣ Find the matching multichannel image path
@@ -458,25 +405,6 @@ def quantify_apoptosis(segmented_masks, dapi_masks, apoptosis_channels, multi_ch
                     multi_img_rgb = cv2.cvtColor(multi_img, cv2.COLOR_GRAY2RGB)
                 else:
                     multi_img_rgb = multi_img.copy()
-    
-                plt.figure(figsize=(8, 8))
-                plt.imshow(purple_img, cmap='gray')
-                plt.title(f'Original Apoptosis (C4) Channel: {sid}')
-                plt.axis('off')
-                plt.show()
-                
-              # 4️⃣ Plot overlay with *outline*
-                plt.figure(figsize=(8, 8))
-                plt.imshow(multi_img_rgb)
-                plt.title(f'Overlay on Multichannel with Outline: {sid}')
-                plt.axis('off')
-            
-                # Extract and draw contours
-                contours = measure.find_contours(combined_mask, 0.5)
-                for contour in contours:
-                    plt.plot(contour[:, 1], contour[:, 0], color='red', linewidth=2)
-            
-                plt.show()
     
             except StopIteration:
                 print(f"⚠️ No multichannel image found for sample {sid}")
