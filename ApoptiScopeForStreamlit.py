@@ -676,9 +676,7 @@ def main():
 # In[ ]:
 
 
-if __name__ == "__main__":
-    main()
-
+main()
 
 # In[ ]:
 
