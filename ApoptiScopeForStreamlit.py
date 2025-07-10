@@ -615,6 +615,13 @@ def streamlit_main():
                 mime='text/csv',
                 )
 
+               st.download_button(
+               label="📥 Download ANALYZED results CSV",
+               data=analyzed_df.to_csv(index=False).encode('utf-8'),
+               file_name=f"NEW_{user_filename}",
+               mime='text/csv',
+               )
+
             except Exception as e:
                 st.error(f"❌ ERROR: {e}")
                 st.exception(e)
