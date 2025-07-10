@@ -684,7 +684,7 @@ def streamlit_main():
 
             except Exception as e:
                 st.error(f"❌ ERROR: {e}")
-                 st.exception(e)
+                st.exception(e)
 
 # In[ ]:
 
