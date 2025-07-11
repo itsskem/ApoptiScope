@@ -552,7 +552,7 @@ def streamlit_main():
     user_filename = st.text_input("💾 Name of CSV file to save results (e.g. results.csv):", "results.csv")
 
     if st.button("🔄 Refresh App"):
-         st.experimental_rerun()
+         st.rerun()
 
     if uploaded_files and user_filename:
         if st.button("🚀 Run ApoptiScope Analysis"):
