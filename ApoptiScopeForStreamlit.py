@@ -95,7 +95,13 @@ def detect_channel(filename):
     return 'multichannel'
 
 def is_purple_present(img, lower_hsv=(115, 30, 30), upper_hsv=(165, 255, 255), threshold_ratio=0.0001):
+    if img is None:
+        print("❌ Image is None!")
+        return False
+
+    # Handle grayscale images
     if len(img.shape) == 2:
+        print("ℹ️ Grayscale image detected — converting to BGR.")
         img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
 
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
@@ -104,9 +110,12 @@ def is_purple_present(img, lower_hsv=(115, 30, 30), upper_hsv=(165, 255, 255), t
     total_pixels = img.shape[0] * img.shape[1]
 
     ratio = purple_pixels / total_pixels
-    print(f"Image has {purple_pixels} purple pixels ({ratio:.6f} ratio)")
+
+    # Super clear logging line
+    print(f"🟣 Purple detection — Pixels: {purple_pixels}, Total: {total_pixels}, Ratio: {ratio:.8f}, Threshold: {threshold_ratio}")
 
     return ratio > threshold_ratio
+
 
 
 # In[ ]:
