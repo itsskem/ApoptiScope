@@ -129,7 +129,7 @@ def find_apoptosis(all_files):
             filename = file["name"].lower()
             print(f"Checking file: {filename}, Channel detected: {detect_channel(filename)}")
 
-             if detect_channel(filename) != 'c4':
+            if detect_channel(filename) != 'c4':
                 continue
 
             slice_match = re.search(r"s\d{2}", filename)
