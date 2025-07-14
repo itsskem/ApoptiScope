@@ -571,6 +571,9 @@ def streamlit_main():
                 
                 # Load uploaded files into memory
                 all_files = st.session_state.get("all_files", [])
+                if not all_files:
+                   st.warning("⚠️ Please upload images before running the analysis.")
+                   return
 
                 st.success(f"✅ Loaded {len(all_files)} image files.")
 
