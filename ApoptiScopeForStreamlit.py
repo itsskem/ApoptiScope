@@ -300,7 +300,7 @@ def segment_apoptosis(apoptosis_channels):
             # Store result
            # segmented_masks[filename] = labeled_mask
 
-           yield filename, labeled_mask
+            yield filename, labeled_mask
 
         except Exception as e:
             print(f"❌ Error segmenting {file}: {e}")
