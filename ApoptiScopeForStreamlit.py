@@ -564,7 +564,7 @@ def streamlit_main():
     if st.button("🔄 Refresh App"):
          st.rerun()
 
-    if uploaded_files and user_filename:
+    if all_files and user_filename:
         if st.button("🚀 Run ApoptiScope Analysis"):
             try:
                 st.info("✅ Preparing images...")
