@@ -570,7 +570,7 @@ def streamlit_main():
                 st.info("✅ Preparing images...")
                 
                 # Load uploaded files into memory
-                all_files = st.session_state["all_files"]
+                all_files = st.session_state.get("all_files", [])
 
                 st.success(f"✅ Loaded {len(all_files)} image files.")
 
