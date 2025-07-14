@@ -544,6 +544,8 @@ def streamlit_main():
     Upload your microscopy .tif/.tiff images below. 
     Follow the steps to run preprocessing, segmentation, and quantification.
     """)
+     
+    all_files = st.session_state.get("all_files", [])
 
     uploaded_files = st.file_uploader(
         "📂 Upload your .tif or .tiff images", 
@@ -570,7 +572,7 @@ def streamlit_main():
                 st.info("✅ Preparing images...")
                 
                 # Load uploaded files into memory
-                all_files = st.session_state.get("all_files", [])
+              #  all_files = st.session_state.get("all_files", [])
                 if not all_files:
                    st.warning("⚠️ Please upload images before running the analysis.")
                    return
