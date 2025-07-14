@@ -127,7 +127,9 @@ def find_apoptosis(all_files):
     for file in tqdm(all_files):
         try: 
             filename = file["name"].lower()
-            if detect_channel(filename) != 'c4':
+            print(f"Checking file: {filename}, Channel detected: {detect_channel(filename)}")
+
+             if detect_channel(filename) != 'c4':
                 continue
 
             slice_match = re.search(r"s\d{2}", filename)
