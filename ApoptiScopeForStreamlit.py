@@ -484,7 +484,7 @@ def quantify_apoptosis_single(fname, labeled_mask, dapi_masks, apoptosis_channel
         return None
 
     if combined_mask.shape != purple_img.shape:
-    print(f"⚠️ Resizing combined_mask from {combined_mask.shape} to {purple_img.shape}")
+         print(f"⚠️ Resizing combined_mask from {combined_mask.shape} to {purple_img.shape}")
     combined_mask = cv2.resize(combined_mask.astype(np.uint8), (purple_img.shape[1], purple_img.shape[0]))
     combined_mask = combined_mask > 0
 
