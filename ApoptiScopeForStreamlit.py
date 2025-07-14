@@ -464,10 +464,14 @@ def analyzing_results(filtered_df, user_filename, control_ids=None):
     )
 
     # 5️⃣ Replace negatives with baseline mean
-    filtered_df.loc[
-        filtered_df["percent_increase_vs_control"] < 0,
-        "percent_increase_vs_control"
-    ] = baseline_mean
+   # filtered_df.loc[
+     #   filtered_df["percent_increase_vs_control"] < 0,
+    #    "percent_increase_vs_control"
+ #   ] = baseline_mean
+
+    filtered_df["percent_increase_label"] = filtered_df["percent_increase_vs_control"].apply(
+    lambda x: f"{x:.2f}% (UNDER CONTROL)" if x < 0 else f"{x:.2f}%"
+    )
 
     # 6️⃣ Save NEW_ CSV
     new_filename = "NEW_" + user_filename
