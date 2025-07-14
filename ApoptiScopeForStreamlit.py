@@ -443,6 +443,63 @@ def quantify_apoptosis(segmented_masks, dapi_masks, apoptosis_channels, multi_ch
 
     return results
 
+def quantify_apoptosis_single(fname, labeled_mask, dapi_masks, apoptosis_channels, multi_channels):
+    sid = extract_sample_id(fname)
+    if not sid:
+        print(f"⚠️ No slice ID found in {fname}")
+        return None
+
+    # Find matching DAPI mask for this sample ID
+    dapi_mask = None
+    for dapi_fname in dapi_masks.keys():
+        if extract_sample_id(dapi_fname) == sid:
+            dapi_mask = dapi_masks[dapi_fname]
+            break
+
+    if dapi_mask is None:
+        print(f"❌ No DAPI mask found for sample {sid}")
+        return None
+
+    # Check that masks have the same shape
+    if labeled_mask.shape != dapi_mask.shape:
+        print(f"⚠️ Shape mismatch for sample {sid}: apoptosis={labeled_mask.shape}, dapi={dapi_mask.shape}")
+        return None
+
+    # Combine masks
+    combined_mask = labeled_mask * (dapi_mask > 0)
+
+    # Find matching apoptosis channel image
+    try:
+        apoptosis_path = next(
+            path for path in apoptosis_channels if extract_sample_id(path["name"]) == sid
+        )
+    except StopIteration:
+        print(f"⚠️ No apoptosis channel image found for {sid}")
+        return None
+
+    # Load the apoptosis image
+    purple_img = load_image_original(apoptosis_path)
+    if purple_img is None:
+        print(f"⚠️ Failed to load apoptosis image for {sid}")
+        return None
+
+    # Quantify
+    background_pixels = purple_img[combined_mask == 0]
+    background_level = np.median(background_pixels)
+    purple_img_bgsub = np.clip(purple_img - background_level, 0, None)
+    purple_pixels = purple_img_bgsub[combined_mask > 0]
+
+    apoptosis_area = np.sum(combined_mask > 0)
+    apoptosis_sum = np.sum(purple_pixels)
+    apoptosis_score = apoptosis_sum / apoptosis_area if apoptosis_area != 0 else 0
+
+    return {
+        "file": fname,
+        "sample_id": sid,
+        "apoptosis_area": int(apoptosis_area),
+        "apoptosis_intensity_sum": float(apoptosis_sum),
+        "apoptosis_score": float(apoptosis_score)
+    }
 
 # In[ ]:
 
