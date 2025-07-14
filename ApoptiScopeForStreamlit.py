@@ -193,37 +193,38 @@ def get_matching_images(all_files, apoptosis_slice_ids):
 
 
 def preprocess_image(img, clahe_clip=3.0, blur_kernel=(5, 5), denoise_h=10):
-   # Handle multi-dimensional images
-   if img.ndim == 3:
-       if img.shape[2] == 3:
-           # RGB image
-           img = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
-       else:
-           # Assume (C, Y, X) - pick first channel
-           img = img[0]
+    # Handle multi-dimensional images
+    if img.ndim == 3:
+        if img.shape[2] == 3:
+            # RGB image
+            img = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+        else:
+            # Assume (C, Y, X) - pick first channel
+            img = img[0]
 
+    # ✅ Downsample large images early to save memory
     if img.shape[0] > 2048 or img.shape[1] > 2048:
-         img = cv2.resize(img, (img.shape[1] // 2, img.shape[0] // 2))
+        print(f"⚠️ Downsampling large image from {img.shape}...")
+        img = cv2.resize(img, (img.shape[1] // 2, img.shape[0] // 2))
 
-
-   # Make sure dtype is correct
+    # Make sure dtype is correct
     if img.dtype != np.uint8:
-         img = cv2.normalize(img, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
+        img = cv2.normalize(img, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
 
-   # Apply CLAHE
-   clahe = cv2.createCLAHE(clipLimit=4.0, tileGridSize=(8,8))
-   img_clahe = clahe.apply(img)
+    # Apply CLAHE
+    clahe = cv2.createCLAHE(clipLimit=4.0, tileGridSize=(8,8))
+    img_clahe = clahe.apply(img)
 
-   # Denoise
-   img_denoised = cv2.fastNlMeansDenoising(img_clahe, h=15)
+    # Denoise
+    img_denoised = cv2.fastNlMeansDenoising(img_clahe, h=15)
 
-   img_median = cv2.medianBlur(img_denoised, 3)
+    # Median blur
+    img_median = cv2.medianBlur(img_denoised, 3)
 
-   # Blur
-   img_blurred = cv2.GaussianBlur(img_median, blur_kernel, 0)
+    # Gaussian blur
+    img_blurred = cv2.GaussianBlur(img_median, blur_kernel, 0)
 
-   return img_blurred
-
+    return img_blurred
 
 # In[ ]:
 
