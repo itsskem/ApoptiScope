@@ -205,7 +205,7 @@ def preprocess_image(img, clahe_clip=3.0, blur_kernel=(5, 5), denoise_h=10):
     # ✅ Downsample large images early to save memory
     if img.shape[0] > 2048 or img.shape[1] > 2048:
         print(f"⚠️ Downsampling large image from {img.shape}...")
-        img = cv2.resize(img, (img.shape[1] // 2, img.shape[0] // 2))
+        img = cv2.resize(img, (1024, 1024))
 
     # Make sure dtype is correct
     if img.dtype != np.uint8:
