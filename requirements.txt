@@ -9,3 +9,4 @@ scikit-learn
 Pillow
 tqdm
 seaborn
+imagecodecs
