@@ -631,7 +631,7 @@ def show_treated_images(filtered_df, baseline_mean, control_ids, uploaded_files)
 
 # In[ ]:
 def streamlit_main():
-    st.title("🧪 ApoptiScope: Interactive Analysis App")
+    st.title("🧪 ApoptiScope: An Apotosis Quantification Tool")
     st.markdown("""
     Upload your microscopy .tif/.tiff images below. 
     Follow the steps to run preprocessing, segmentation, and quantification.
