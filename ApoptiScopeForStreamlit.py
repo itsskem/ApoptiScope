@@ -116,8 +116,7 @@ def find_apoptosis(all_files):
             slice_id = slice_match.group(0)
 
             # Load and check for purple
-            file_bytes = np.frombuffer(file["bytes"], np.uint8)
-            img = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
+            img = tifffile.imread(io.BytesIO(file["bytes"]))
             if img is None:
                 print(f"❌ Could not read image: {filename}")
                 continue
@@ -203,8 +202,7 @@ def preprocess_image(img, clahe_clip=3.0, blur_kernel=(5, 5), denoise_h=10):
 
 
 def load_image_original(file):
-    file_bytes = np.frombuffer(file["bytes"], np.uint8)
-    img = cv2.imdecode(file_bytes, cv2.IMREAD_UNCHANGED)
+    img = tifffile.imread(io.BytesIO(file["bytes"]))
     return img
 
 #need to segment the images
@@ -504,7 +502,7 @@ def show_treated_images(filtered_df, baseline_mean, control_ids, uploaded_files)
         return change_df, []
 
     # 2️⃣ Make a map of uploaded filenames -> files
-    uploaded_map = {file["name"].lower(): file for file in uploaded_files}
+    uploaded_map = {file["name"].lower(): file for file in all_files}
 
 
     treated_images_list = []
@@ -555,6 +553,14 @@ def streamlit_main():
 
     user_filename = st.text_input("💾 Name of CSV file to save results (e.g. results.csv):", "results.csv")
 
+    if "all_files" not in st.session_state:
+         st.session_state["all_files"] = []
+
+    if uploaded_files:
+         st.session_state["all_files"] = [
+             {"name": f.name, "bytes": f.read()} for f in uploaded_files
+         ]
+     
     if st.button("🔄 Refresh App"):
          st.rerun()
 
@@ -564,12 +570,7 @@ def streamlit_main():
                 st.info("✅ Preparing images...")
                 
                 # Load uploaded files into memory
-                all_files = []
-                for f in uploaded_files:
-                    all_files.append({
-                        "name": f.name,
-                        "bytes": f.read()
-                    })
+                all_files = st.session_state["all_files"]
 
                 st.success(f"✅ Loaded {len(all_files)} image files.")
 
