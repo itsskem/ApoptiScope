@@ -66,24 +66,33 @@ def enhance_contrast(img): #enhances the contrast of the images
     merged = cv2.merge((cl,a,b))
     return cv2.cvtColor(merged, cv2.COLOR_LAB2BGR)
 
-def detect_channel(filename): #keep this standard naming system
+def detect_channel(filename):
     filename = filename.lower()
+
+    # ✅ Exact match for multi-channel naming
     if 'c1+2+3+4' in filename:
         return 'multichannel'
-    elif 'c1' in filename or 'dapi-t1' in filename:
-        return 'c1' #DAPI
-    elif 'c2' in filename:
-        return 'c2' #phallodoin
-    elif 'c3' in filename or 'af488-t2' in filename:
-        return 'c3' #NK cells
-    elif 'c4' in filename or 'af647-t2' in filename:
-        return 'c4' #cell death
 
-    channel_suffixes = ['_c1', '_c2', '_c3', '_c4'] #accounts for identifying multichannel with only the slice_id
-    if not any(suffix in filename for suffix in channel_suffixes):
-        return 'multichannel'
+    # ✅ Special naming patterns
+    if 'dapi-t1' in filename:
+        return 'c1'
+    if 'af488-t2' in filename:
+        return 'c3'
+    if 'af647-t2' in filename:
+        return 'c4'
 
-    return 'unknown'
+    # ✅ Match slice-style patterns like _s03c1
+    if re.search(r's\d{2}c1', filename):
+        return 'c1'
+    if re.search(r's\d{2}c2', filename):
+        return 'c2'
+    if re.search(r's\d{2}c3', filename):
+        return 'c3'
+    if re.search(r's\d{2}c4', filename):
+        return 'c4'
+
+    # ✅ Fallback: if no known suffix or pattern, assume multichannel
+    return 'multichannel'
 
 def is_purple_present(img, lower_hsv=(125, 50, 50), upper_hsv=(155, 255, 255), threshold_ratio=0.001): #detects if apoptosis is even present
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
