@@ -202,9 +202,11 @@ def preprocess_image(img, clahe_clip=3.0, blur_kernel=(5, 5), denoise_h=10):
            # Assume (C, Y, X) - pick first channel
            img = img[0]
 
+    if img.shape[0] > 2048 or img.shape[1] > 2048:
+         img = cv2.resize(img, (img.shape[1] // 2, img.shape[0] // 2))
    # Make sure dtype is correct
-   if img.dtype != np.uint8:
-       img = cv2.normalize(img, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
+    if img.dtype != np.uint8:
+         img = cv2.normalize(img, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
 
    # Apply CLAHE
    clahe = cv2.createCLAHE(clipLimit=4.0, tileGridSize=(8,8))
@@ -293,7 +295,9 @@ def segment_apoptosis(apoptosis_channels):
             num_labels, labeled_mask = cv2.connectedComponents(binary_mask.astype(np.uint8))
             
             # Store result
-            segmented_masks[filename] = labeled_mask
+           # segmented_masks[filename] = labeled_mask
+
+           yield filename, labeled_mask
 
         except Exception as e:
             print(f"❌ Error segmenting {file}: {e}")
