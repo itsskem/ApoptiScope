@@ -94,16 +94,19 @@ def detect_channel(filename):
     # ✅ Fallback: if no known suffix or pattern, assume multichannel
     return 'multichannel'
 
-def is_purple_present(img, lower_hsv=(125, 50, 50), upper_hsv=(155, 255, 255), threshold_ratio=0.001): #detects if apoptosis is even present
+def is_purple_present(img, lower_hsv=(115, 30, 30), upper_hsv=(165, 255, 255), threshold_ratio=0.0001):
+    if len(img.shape) == 2:
+        img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
+
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
     mask = cv2.inRange(hsv, lower_hsv, upper_hsv)
     purple_pixels = np.count_nonzero(mask)
-    total_pixels = mask.size
+    total_pixels = img.shape[0] * img.shape[1]
 
-    purple_ratio = purple_pixels / total_pixels
-    print(f"Purple pixel ratio: {purple_ratio:.6f}")
+    ratio = purple_pixels / total_pixels
+    print(f"Image has {purple_pixels} purple pixels ({ratio:.6f} ratio)")
 
-    return purple_ratio > threshold_ratio
+    return ratio > threshold_ratio
 
 
 # In[ ]:
