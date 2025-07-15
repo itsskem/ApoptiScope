@@ -728,9 +728,11 @@ def streamlit_main():
                            apoptosis_channels,
                            multi_channels
                            )
-                     if res:
+                     if res is None:
+                           st.warning(f"⚠️ Skipped {filename}: quantification returned None.")
+                     else:
                           results.append(res)
-
+                          
                 if not results:
                     st.warning("⚠️ No quantification results generated. Exiting.")
                     st.stop()
