@@ -1,6 +1,6 @@
 streamlit==1.25.0
 numpy==1.26.4
-opencv-python==4.10.0
+opencv-python
 tifffile
 pandas
 scikit-image
