@@ -501,7 +501,7 @@ def quantify_apoptosis_single(fname, labeled_mask, dapi_masks, apoptosis_channel
     return {
         "file": fname,
         "sample_id": sid,
-        "apoptosis_area": int(apoptosis_area),
+        "apoptosis_area": int(apoptosis_area),PI
         "apoptosis_intensity_sum": float(apoptosis_sum),
         "apoptosis_score": float(apoptosis_score)
     }
@@ -690,9 +690,22 @@ def streamlit_main():
                     f"✅ Channels collected:\n- DAPI: {len(DAPI_channels)}\n- Apoptosis: {len(apoptosis_channels)}\n- Multichannel: {len(multi_channels)}"
                 )
 
-                if not DAPI_channels or not apoptosis_channels:
-                    st.warning("⚠️ Missing necessary channels for segmentation. Exiting.")
-                    st.stop()
+                if not DAPI_channels:
+                   st.error("⚠️ No DAPI (c1) channels found. Please upload your DAPI images.")
+                   st.stop()
+
+     
+                if not apoptosis_channels:
+                   st.error("⚠️ No Apoptosis (c4) channels found. Please upload your apoptosis-stained images.")
+                   st.stop()
+
+
+                if not multi_channels:
+                   st.error("⚠️ No multichannel images found. Please upload multichannel images.")
+                   st.stop()
+
+                st.success("✅ All required channels detected! (c1, c4, multichannel)")
+
 
                 # 🔹 Segment DAPI once
                 dapi_masks = segment_dapi(DAPI_channels)
