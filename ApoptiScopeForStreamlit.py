@@ -283,6 +283,7 @@ def segment_apoptosis(apoptosis_channels):
             filename = file["name"].lower()
     
             original_img = load_image_original(file)
+            original_img = cv2.resize(image, (512, 512))
             if original_img is None:
                 raise ValueError(f"❌ Failed to load image: {file}")
            
@@ -718,7 +719,8 @@ def streamlit_main():
                 # 🔹 Segment & quantify apoptosis one by one
                 results = []
                 for i, (filename, labeled_mask) in enumerate(segment_apoptosis(apoptosis_channels)):
-                   with st.spinner(f"Segmenting apoptosis image {i+1}/{len(apoptosis_channels)}"):
+                     st.text(f"Starting apoptosis segmentation on {len(apoptosis_channels)} images")
+                     with st.spinner(f"Segmenting apoptosis image {i+1}/{len(apoptosis_channels)}"):
                        res = quantify_apoptosis_single(
                            filename,
                            labeled_mask,
