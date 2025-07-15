@@ -235,6 +235,8 @@ def preprocess_image(img, clahe_clip=3.0, blur_kernel=(5, 5), denoise_h=10):
 
 def load_image_original(file):
     img = tifffile.imread(io.BytesIO(file["bytes"]))
+    if img.shape[0] > 512 or img.shape[1] > 512:
+        img = cv2.resize(img, (512, 512))
     return img
 
 #need to segment the images
@@ -357,96 +359,6 @@ def extract_sample_id(filename):
 
 
 # In[ ]:
-
-
-def quantify_apoptosis(segmented_masks, dapi_masks, apoptosis_channels, multi_channels):
-    dapi_by_sample = {}
-    results = []
-    for fname in dapi_masks.keys():
-        sid = extract_sample_id(fname)
-        if sid:
-            dapi_by_sample[sid] = dapi_masks[fname]
-    
-    for fname in segmented_masks.keys():
-        sid = extract_sample_id(fname)
-        if sid:
-            apoptosis_labeled = segmented_masks[fname]
-            dapi_mask = dapi_by_sample.get(sid)
-    
-            if dapi_mask is None:
-                print(f"❌ No DAPI mask found for sample {sid}")
-                continue
-    
-            # ✅ Combine them
-            if apoptosis_labeled.shape != dapi_mask.shape:
-                 print(f"⚠️ Shape mismatch for sample {sid}: apoptosis={apoptosis_labeled.shape}, dapi={dapi_mask.shape}")
-                 continue
-            combined_mask = apoptosis_labeled * (dapi_mask > 0)
-    
-            # 1️⃣ Find matching apoptosis channel image
-            try:
-                apoptosis_path = next(
-                   path for path in apoptosis_channels if extract_sample_id(path["name"]) == sid
-               )
-            except StopIteration:
-                print(f"⚠️ No apoptosis channel image found for {sid}")
-                continue
-            
-            # 2️⃣ Load it
-            purple_img = load_image_original(apoptosis_path)
-            if purple_img is None:
-                print(f"⚠️ Failed to load apoptosis image for {sid}")
-                continue
-            
-            # 3️⃣ Quantify
-            background_pixels = purple_img[combined_mask == 0]
-            background_level = np.median(background_pixels)
-            purple_img_bgsub = np.clip(purple_img - background_level, 0, None)
-            
-            purple_pixels = purple_img_bgsub[combined_mask > 0]
-            apoptosis_area = np.sum(combined_mask > 0)
-            apoptosis_sum = np.sum(purple_pixels)
-            apoptosis_score = apoptosis_sum / apoptosis_area if apoptosis_area != 0 else 0
-            
-            # 4️⃣ Store result
-            results.append({
-                "file": fname,
-                "sample_id": sid,
-                "apoptosis_area": int(apoptosis_area),
-                "apoptosis_intensity_sum": float(apoptosis_sum),
-                "apoptosis_score": float(apoptosis_score)
-            })
-            
-            # --- Quantification Block END ---
-            
-    
-    
-            try:
-                # 1️⃣ Find the matching multichannel image path
-                multi_path = next(
-                   path for path in multi_channels if extract_sample_id(path["name"]) == sid
-               )
-    
-                apopti_path = next(
-                   path for path in apoptosis_channels if extract_sample_id(path["name"]) == sid
-               )
-    
-                # 2️⃣ Load it
-                multi_img = load_image_original(multi_path)
-                if multi_img is None:
-                    print(f"⚠️ Could not load multichannel image for {sid}")
-                    continue
-    
-                # 3️⃣ Ensure it's RGB
-                if multi_img.ndim == 2:
-                    multi_img_rgb = cv2.cvtColor(multi_img, cv2.COLOR_GRAY2RGB)
-                else:
-                    multi_img_rgb = multi_img.copy()
-    
-            except StopIteration:
-                print(f"⚠️ No multichannel image found for sample {sid}")
-
-    return results
 
 def quantify_apoptosis_single(fname, labeled_mask, dapi_masks, apoptosis_channels, multi_channels):
     sid = extract_sample_id(fname)
