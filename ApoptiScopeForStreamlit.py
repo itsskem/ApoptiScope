@@ -501,7 +501,7 @@ def quantify_apoptosis_single(fname, labeled_mask, dapi_masks, apoptosis_channel
     return {
         "file": fname,
         "sample_id": sid,
-        "apoptosis_area": int(apoptosis_area),PI
+        "apoptosis_area": int(apoptosis_area),
         "apoptosis_intensity_sum": float(apoptosis_sum),
         "apoptosis_score": float(apoptosis_score)
     }
