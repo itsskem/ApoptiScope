@@ -466,7 +466,7 @@ def quantify_apoptosis_single(fname, labeled_mask, dapi_masks, apoptosis_channel
     # Check that masks have the same shape
     if labeled_mask.shape != dapi_mask.shape:
         print(f"⚠️ Shape mismatch for sample {sid}: apoptosis={labeled_mask.shape}, dapi={dapi_mask.shape}")
-        return None
+        dapi_mask = cv2.resize(dapi_mask.astype(np.uint8), (labeled_mask.shape[1], labeled_mask.shape[0])) > 0
 
     # Combine masks
     combined_mask = labeled_mask * (dapi_mask > 0)
