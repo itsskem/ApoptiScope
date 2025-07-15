@@ -173,16 +173,17 @@ def get_matching_images(all_files, apoptosis_slice_ids):
                 continue
             slice_id = slice_match.group(0)
 
-            if slice_id not in apoptosis_slice_ids:
-                continue
+            if detect_channel(filename) == 'c1':
+              DAPI_channels.append(file)
 
-            channel = detect_channel(filename)
-            if channel == 'c1':
-                DAPI_channels.append(file)
-            elif channel == 'c4':
-                apoptosis_channels.append(file)
+               # Only keep apoptosis/multichannel if slice ID passed purple check
+            elif slice_id in apoptosis_slice_ids:
+               channel = detect_channel(filename)
+               if channel == 'c4':
+                  apoptosis_channels.append(file)
             elif channel == 'multichannel':
-                multi_channels.append(file)
+               channel = detect_channel(filename)
+               multi_channels.append(file)
 
         except Exception as e:
             print(f"❌ Error collecting {filename}: {e}")
@@ -283,7 +284,7 @@ def segment_apoptosis(apoptosis_channels):
             filename = file["name"].lower()
     
             original_img = load_image_original(file)
-            original_img = cv2.resize(image, (512, 512))
+            original_img = cv2.resize(original_img, (512, 512))
             if original_img is None:
                 raise ValueError(f"❌ Failed to load image: {file}")
            
