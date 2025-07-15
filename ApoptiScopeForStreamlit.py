@@ -717,16 +717,17 @@ def streamlit_main():
 
                 # 🔹 Segment & quantify apoptosis one by one
                 results = []
-                for filename, labeled_mask in segment_apoptosis(apoptosis_channels):
-                    res = quantify_apoptosis_single(
-                        filename,
-                        labeled_mask,
-                        dapi_masks,
-                        apoptosis_channels,
-                        multi_channels
-                    )
-                    if res:
-                        results.append(res)
+                for i, (filename, labeled_mask) in enumerate(segment_apoptosis(apoptosis_channels)):
+                   with st.spinner(f"Segmenting apoptosis image {i+1}/{len(apoptosis_channels)}"):
+                       res = quantify_apoptosis_single(
+                           filename,
+                           labeled_mask,
+                           dapi_masks,
+                           apoptosis_channels,
+                           multi_channels
+                           )
+                  if res:
+                      results.append(res)
 
                 if not results:
                     st.warning("⚠️ No quantification results generated. Exiting.")
