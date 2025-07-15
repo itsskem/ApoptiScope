@@ -173,17 +173,18 @@ def get_matching_images(all_files, apoptosis_slice_ids):
                 continue
             slice_id = slice_match.group(0)
 
-            if detect_channel(filename) == 'c1':
-              DAPI_channels.append(file)
+            channel = detect_channel(filename)
 
-               # Only keep apoptosis/multichannel if slice ID passed purple check
-            elif slice_id in apoptosis_slice_ids:
-               channel = detect_channel(filename)
-               if channel == 'c4':
-                  apoptosis_channels.append(file)
+            if channel == 'c1':
+                DAPI_channels.append(file)
+
+            elif channel == 'c4':
+                if slice_id in apoptosis_slice_ids:
+                    apoptosis_channels.append(file)
+
             elif channel == 'multichannel':
-               channel = detect_channel(filename)
-               multi_channels.append(file)
+                if slice_id in apoptosis_slice_ids:
+                    multi_channels.append(file)
 
         except Exception as e:
             print(f"❌ Error collecting {filename}: {e}")
