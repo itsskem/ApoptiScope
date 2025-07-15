@@ -726,7 +726,7 @@ def streamlit_main():
                            apoptosis_channels,
                            multi_channels
                            )
-                  if res:
+                   if res:
                       results.append(res)
 
                 if not results:
