@@ -728,8 +728,8 @@ def streamlit_main():
                            apoptosis_channels,
                            multi_channels
                            )
-                   if res:
-                      results.append(res)
+                     if res:
+                          results.append(res)
 
                 if not results:
                     st.warning("⚠️ No quantification results generated. Exiting.")
