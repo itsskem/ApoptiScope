@@ -549,49 +549,53 @@ def show_treated_images(filtered_df, baseline_mean, control_ids, uploaded_files)
 
 # In[ ]:
 def streamlit_main():
-    st.title("🧪 ApoptiScope: An Apotosis Quantification Tool")
+    st.title("🧪 ApoptiScope: An Apoptosis Quantification Tool")
     st.markdown("""
     Upload your microscopy .tif/.tiff images below. 
     Follow the steps to run preprocessing, segmentation, and quantification.
     """)
 
-    # Session state for file handling
-    all_files = st.session_state.get("all_files", [])
-
+    # File uploader
     uploaded_files = st.file_uploader(
         "📂 Upload your .tif or .tiff images",
         accept_multiple_files=True,
         type=['tif', 'tiff']
     )
 
-    user_filename = st.text_input(
-        "💾 Name of CSV file to save results (e.g. results.csv):",
-        "results.csv"
-    )
-
-    if "all_files" not in st.session_state:
-        st.session_state["all_files"] = []
-
+    # Persist uploads to session state (only if new files were uploaded)
     if uploaded_files:
         st.session_state["all_files"] = [
             {"name": f.name, "bytes": f.read()} for f in uploaded_files
         ]
 
+    # Always load from session_state
+    all_files = st.session_state.get("all_files", [])
+
+    # Defensive guard against lost file bytes on rerun
+    if all_files:
+        for f in all_files:
+            if "bytes" not in f or not f["bytes"]:
+                st.error("⚠️ Your uploaded image data was lost after rerun. Please re-upload your images.")
+                st.stop()
+
+    # CSV input
+    user_filename = st.text_input(
+        "💾 Name of CSV file to save results (e.g. results.csv):",
+        "results.csv"
+    )
+
     if st.button("🔄 Refresh App"):
+        st.session_state.clear()
         st.rerun()
 
+    # Only show analysis button if we have files and a CSV name
     if all_files and user_filename:
         if st.button("🚀 Run ApoptiScope Analysis"):
             try:
                 st.info("✅ Preparing images...")
-
-                if not all_files:
-                    st.warning("⚠️ Please upload images before running the analysis.")
-                    return
-
                 st.success(f"✅ Loaded {len(all_files)} image files.")
 
-                # 🔹 Find slices with apoptosis signal
+                # Find slices with apoptosis signal
                 apoptosis_slice_ids = find_apoptosis(all_files)
                 st.success(f"✅ Identified {len(apoptosis_slice_ids)} slices with apoptosis signal.")
 
@@ -599,7 +603,7 @@ def streamlit_main():
                     st.warning("⚠️ No slices detected with apoptosis signal. Exiting.")
                     st.stop()
 
-                # 🔹 Collect channels
+                # Collect matching channels
                 DAPI_channels, apoptosis_channels, multi_channels = get_matching_images(
                     all_files,
                     apoptosis_slice_ids
@@ -609,66 +613,62 @@ def streamlit_main():
                 )
 
                 if not DAPI_channels:
-                   st.error("⚠️ No DAPI (c1) channels found. Please upload your DAPI images.")
-              #     st.stop()
-
-     
+                    st.error("⚠️ No DAPI (c1) channels found. Please upload your DAPI images.")
                 if not apoptosis_channels:
-                   st.error("⚠️ No Apoptosis (c4) channels found. Please upload your apoptosis-stained images.")
-                 #  st.stop()
-
-
+                    st.error("⚠️ No Apoptosis (c4) channels found. Please upload your apoptosis-stained images.")
                 if not multi_channels:
-                   st.error("⚠️ No multichannel images found. Please upload multichannel images.")
-                 #  st.stop()
+                    st.error("⚠️ No multichannel images found. Please upload multichannel images.")
+
+                # If critical channels missing, stop
+                if not (DAPI_channels and apoptosis_channels and multi_channels):
+                    st.stop()
 
                 st.success("✅ All required channels detected! (c1, c4, multichannel)")
 
-
-                # 🔹 Segment DAPI once
+                # Segment DAPI once
                 dapi_masks = segment_dapi(DAPI_channels)
                 if not dapi_masks:
                     st.warning("⚠️ Segmentation failed for DAPI channels. Exiting.")
                     st.stop()
 
-                # 🔹 Segment & quantify apoptosis one by one
+                # Segment & quantify apoptosis one by one
                 results = []
                 for i, (filename, labeled_mask) in enumerate(segment_apoptosis(apoptosis_channels)):
-                     st.text(f"Starting apoptosis segmentation on {len(apoptosis_channels)} images")
-                     with st.spinner(f"Segmenting apoptosis image {i+1}/{len(apoptosis_channels)}"):
-                       res = quantify_apoptosis_single(
-                           filename,
-                           labeled_mask,
-                           dapi_masks,
-                           apoptosis_channels,
-                           multi_channels
-                           )
-                     if res is None:
-                           st.warning(f"⚠️ Skipped {filename}: quantification returned None.")
-                     else:
-                          results.append(res)
-                          
+                    st.text(f"Starting apoptosis segmentation on {len(apoptosis_channels)} images")
+                    with st.spinner(f"Segmenting apoptosis image {i+1}/{len(apoptosis_channels)}"):
+                        res = quantify_apoptosis_single(
+                            filename,
+                            labeled_mask,
+                            dapi_masks,
+                            apoptosis_channels,
+                            multi_channels
+                        )
+                    if res is None:
+                        st.warning(f"⚠️ Skipped {filename}: quantification returned None.")
+                    else:
+                        results.append(res)
+
                 if not results:
                     st.warning("⚠️ No quantification results generated. Exiting.")
                     st.stop()
 
-                # 🔹 Save raw results
+                # Save raw results
                 save_results(results, user_filename)
                 st.success(f"✅ Raw results saved to {user_filename}")
 
-                # 🔹 Filter by apoptosis_area
+                # Filter by apoptosis_area
                 df = pd.read_csv(user_filename)
                 filtered_df = df[df["apoptosis_area"] >= 20000]
                 if filtered_df.empty:
                     st.warning("⚠️ No rows passed apoptosis_area >= 20000 filter. Exiting.")
                     st.stop()
 
-                # 🔹 Analyze fold-change vs controls
+                # Analyze fold-change vs controls
                 control_ids = ['s01', 's02', 's03', 's04', 's05']
                 analyzed_df = analyzing_results(filtered_df, user_filename, control_ids)
                 st.success(f"✅ Analysis complete. NEW_{user_filename} saved with fold-change results.")
 
-                # 🔹 Optional: Show images
+                # Optional: Show treated images
                 if st.checkbox("👁️ Show treated images"):
                     show_treated_images(
                         analyzed_df,
@@ -680,7 +680,7 @@ def streamlit_main():
                 st.balloons()
                 st.success("🎉 ApoptiScope pipeline complete!")
 
-                # 🔹 Prepare results for download
+                # Prepare ZIP for download
                 raw_csv = df.to_csv(index=False)
                 new_csv = analyzed_df.to_csv(index=False)
 
