@@ -610,17 +610,17 @@ def streamlit_main():
 
                 if not DAPI_channels:
                    st.error("⚠️ No DAPI (c1) channels found. Please upload your DAPI images.")
-                   st.stop()
+              #     st.stop()
 
      
                 if not apoptosis_channels:
                    st.error("⚠️ No Apoptosis (c4) channels found. Please upload your apoptosis-stained images.")
-                   st.stop()
+                 #  st.stop()
 
 
                 if not multi_channels:
                    st.error("⚠️ No multichannel images found. Please upload multichannel images.")
-                   st.stop()
+                 #  st.stop()
 
                 st.success("✅ All required channels detected! (c1, c4, multichannel)")
 
