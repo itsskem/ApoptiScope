@@ -94,7 +94,7 @@ def detect_channel(filename):
     # ✅ Fallback: if no known suffix or pattern, assume multichannel
     return 'multichannel'
 
-def is_purple_present(img, lower_hsv=(115, 30, 30), upper_hsv=(165, 255, 255), threshold_ratio=0.0001):
+def is_purple_present(img, lower_hsv=(125, 50, 50), upper_hsv=(155, 255, 255), threshold_ratio=0.001):
     if img is None:
         print("❌ Image is None!")
         return False
@@ -205,12 +205,6 @@ def preprocess_image(img, clahe_clip=3.0, blur_kernel=(5, 5), denoise_h=10):
             # Assume (C, Y, X) - pick first channel
             img = img[0]
 
-    # ✅ Downsample large images early to save memory
-    MAX_SIZE = 512
-    if img.shape[0] > MAX_SIZE or img.shape[1] > MAX_SIZE:
-         scale = MAX_SIZE / max(img.shape[0], img.shape[1])
-         new_size = (int(img.shape[1] * scale), int(img.shape[0] * scale))
-         img = cv2.resize(img, new_size)
 
     # Make sure dtype is correct
     if img.dtype != np.uint8:
@@ -236,8 +230,14 @@ def preprocess_image(img, clahe_clip=3.0, blur_kernel=(5, 5), denoise_h=10):
 
 def load_image_original(file):
     img = tifffile.imread(io.BytesIO(file["bytes"]))
-    if img.shape[0] > 512 or img.shape[1] > 512:
-        img = cv2.resize(img, (512, 512))
+
+    MAX_SIZE = 2048  # generous, preserves detail
+
+    if max(img.shape[0], img.shape[1]) > MAX_SIZE:
+        scale = MAX_SIZE / max(img.shape[0], img.shape[1])
+        new_size = (int(img.shape[1] * scale), int(img.shape[0] * scale))
+        img = cv2.resize(img, new_size)
+
     return img
 
 #need to segment the images
@@ -288,7 +288,7 @@ def segment_apoptosis(apoptosis_channels):
             filename = file["name"].lower()
     
             original_img = load_image_original(file)
-            original_img = cv2.resize(original_img, (512, 512))
+            
             if original_img is None:
                 raise ValueError(f"❌ Failed to load image: {file}")
            
