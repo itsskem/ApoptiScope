@@ -147,7 +147,8 @@ def find_apoptosis(all_files):
             new_img = enhance_contrast(img)
 
             if is_purple_present(new_img):
-                apoptosis_slice_ids.add(slice_id) 
+                 print(f"🟣 Apoptosis detected! Slice ID: {slice_id} (File: {filename})")
+                 apoptosis_slice_ids.add(slice_id) 
 
         except Exception as e:
             print(f"❌ Error segmenting {filename}: {e}")
