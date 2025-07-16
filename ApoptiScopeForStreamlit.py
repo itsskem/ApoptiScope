@@ -571,12 +571,21 @@ def streamlit_main():
     # Always load from session_state
     all_files = st.session_state.get("all_files", [])
 
-    # Defensive guard against lost file bytes on rerun
-    if all_files:
-        for f in all_files:
-            if "bytes" not in f or not f["bytes"]:
-                st.error("⚠️ Your uploaded image data was lost after rerun. Please re-upload your images.")
-                st.stop()
+   # ✅ STRONGER GUARD AGAINST CORRUPT UPLOADS
+    valid_files = []
+    for f in all_files:
+         try:
+             # Actually try to read the image to make sure it's valid
+             tifffile.imread(io.BytesIO(f["bytes"]))
+             valid_files.append(f)
+         except Exception:
+             st.warning(f"⚠️ The uploaded image '{f['name']}' is invalid or got corrupted on rerun. Please re-upload it.")
+
+    if not valid_files and all_files:
+         st.error("⚠️ Your uploaded images were lost or invalid after rerun. Please re-upload them.")
+         st.stop()
+
+    all_files = valid_files
 
     # CSV input
     user_filename = st.text_input(
