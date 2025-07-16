@@ -247,7 +247,7 @@ def segment_cells(img_path, min_size=100):
 #    img = cv2.imdecode(file_bytes, cv2.IMREAD_GRAYSCALE)
     
     # Preprocess
-    preprocessed = preprocess_grayscale_image(img)
+    preprocessed = preprocess_image(img)
     preprocessed_float = preprocessed / 255.0
 
     # Further contrast enhancement
